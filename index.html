@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Pedidos Cafetería</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Cafetería Escolar</h1>
+
+    <form id="formCafeteria">
+        <label>Cliente:</label><br>
+        <input type="text" id="clienteCafeteria"><br><br>
+
+        <label>Producto:</label><br>
+        <select id="productoCafeteria">
+            <option value="P001|Pupusa|0.75">P001 - Pupusa ($0.75)</option>
+            <option value="P002|Hamburguesa|2.50">P002 - Hamburguesa ($2.50)</option>
+            <option value="P003|Pizza|2.00">P003 - Pizza ($2.00)</option>
+            <option value="P004|Taco|1.50">P004 - Taco ($1.50)</option>
+            <option value="P005|Jugo|1.00">P005 - Jugo ($1.00)</option>
+            <option value="P006|Agua|0.75">P006 - Agua ($0.75)</option>
+        </select><br><br>
+
+        <label>Cantidad:</label><br>
+        <input type="number" id="cantidadCafeteria" min="1"><br><br>
+
+        <label>Método de pago:</label><br>
+        <input type="radio" name="pago" value="Efectivo" checked> Efectivo
+        <input type="radio" name="pago" value="Tarjeta"> Tarjeta<br><br>
+
+        <button type="submit">REALIZAR PEDIDO</button>
+    </form>
+
+    <h2>PEDIDO REGISTRADO</h2>
+    <div id="resultadoCafeteria"></div>
+
+    <hr>
+
+    <h2>Consultar Pedidos</h2>
+    <input type="file" id="archivoPedidos">
+    <button type="button" id="btnMostrarPedidos">CARGAR PEDIDOS.TXT</button>
+    <div id="vistaConsultaPedidos"></div>
+
+    <script>
+        const formCafeteria = document.getElementById('formCafeteria');
+        const resultadoCafeteria = document.getElementById('resultadoCafeteria');
+
+        formCafeteria.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const cliente = document.getElementById('clienteCafeteria').value;
+            const productoSelect = document.getElementById('productoCafeteria').value;
+            const cantidad = parseInt(document.getElementById('cantidadCafeteria').value);
+            const metodoPago = document.querySelector('input[name="pago"]:checked').value;
+
+            const partesProducto = productoSelect.split('|');
+            const codigoProd = partesProducto[0];
+            const nombreProd = partesProducto[1];
+            const precioProd = parseFloat(partesProducto[2]);
+
+            const subtotal = precioProd * cantidad;
+            let descuento = 0;
+
+            if (cantidad >= 5) {
+                descuento = subtotal * 0.10;
+            }
+
+            const total = subtotal - descuento;
+
+            //Aca se muestra el pedido
+            resultadoCafeteria.innerHTML = `
+                <p><strong>Cliente:</strong> ${cliente}</p>
+                <p><strong>Producto:</strong> ${nombreProd}</p>
+                <p><strong>Cantidad:</strong> ${cantidad}</p>
+                <p><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
+                <p><strong>Descuento:</strong> $${descuento.toFixed(2)}</p>
+                <p><strong>TOTAL:</strong> $${total.toFixed(2)}</p>
+                <p><strong>Pago:</strong> ${metodoPago}</p>
+                <p><em>Formato para pedidos.txt:</em><br>
+                <code>001|${cliente}|${nombreProd}|${cantidad}|${precioProd.toFixed(2)}|${subtotal.toFixed(2)}|${descuento.toFixed(2)}|${total.toFixed(2)}|${metodoPago}</code></p>
+            `;
+        });
+
+        document.getElementById('btnMostrarPedidos').addEventListener('click', function() {
+            const archivoInput = document.getElementById('archivoPedidos');
+            const vista = document.getElementById('vistaConsultaPedidos');
+
+            if (archivoInput.files.length === 0) {
+                alert('Por favor seleccione un archivo pedidos.txt');
+                return;
+            }
+
+            const archivo = archivoInput.files[0];
+            const lector = new FileReader();
+
+            lector.onload = function(e) {
+                const contenido = e.target.result;
+                const lineas = contenido.split('\n');
+
+                let html = '<br><table border="1"><tr><th>Código</th><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Total</th></tr>';
+                let totalPedidos = 0;
+                let ventasTotales = 0;
+
+                lineas.forEach(linea => {
+                    if (linea.trim() !== '') {
+                        totalPedidos++;
+                        const p = linea.split('|');
+                        const codigo = p[0];
+                        const clienteNom = p[1];
+                        const productoNom = p[2];
+                        const cant = p[3];
+                        const tot = parseFloat(p[7]);
+
+                        ventasTotales += tot;
+
+                        html += `<tr><td>${codigo}</td><td>${clienteNom}</td><td>${productoNom}</td><td>${cant}</td><td>$${tot.toFixed(2)}</td></tr>`;
+                    }
+                });
+                html += '</table>';
+                html += '<h3>RESUMEN DE VENTAS</h3>';
+                html += `<p><strong>Pedidos:</strong> ${totalPedidos}</p>`;
+                html += `<p><strong>Ventas:</strong> $${ventasTotales.toFixed(2)}</p>`;
+
+                vista.innerHTML = html;
+            };
+
+            lector.readAsText(archivo);
+        });
+    </script>
+
+</body>
+</html>
